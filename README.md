@@ -1,7 +1,7 @@
-Travertine [![Build Status](https://papermc.io/ci/job/Travertine/badge/icon)](https://papermc.io/ci/job/Travertine/)
+NachoBungee [![Build Status](https://papermc.io/ci/job/Travertine/badge/icon)](https://papermc.io/ci/job/Travertine/)
 =========
 
-Travertine is Waterfall with additional protocols. Waterfall is a fork of the well-known [BungeeCord](https://github.com/SpigotMC/BungeeCord) server teleportation suite.
+NachoBungee is a fork of Travertine which a fork of Waterfall which is a fork of BungeeCord
 
 Waterfall focuses on three main areas:
 
