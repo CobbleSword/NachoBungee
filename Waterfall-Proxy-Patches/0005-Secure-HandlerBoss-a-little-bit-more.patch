@@ -1,0 +1,93 @@
+From 3af173d9cbcb25ac6c7554b453c57cd01de38c53 Mon Sep 17 00:00:00 2001
+From: Sprock <github@heathlogancampbell.com>
+Date: Tue, 10 Nov 2020 02:22:48 +1300
+Subject: [PATCH] Secure HandlerBoss a little bit more
+
+
+diff --git a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
+index 989bfd87..fd52acd9 100644
+--- a/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
++++ b/proxy/src/main/java/net/md_5/bungee/netty/HandlerBoss.java
+@@ -56,7 +56,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
+     {
+         if ( handler != null )
+         {
+-            channel.markClosed();
++            channel.close();
+             handler.disconnected( channel );
+ 
+             if ( !( handler instanceof InitialHandler || handler instanceof PingHandler ) )
+@@ -78,43 +78,39 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
+     @Override
+     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
+     {
+-        if ( msg instanceof HAProxyMessage )
++        if (ctx.channel().isActive())
+         {
+-            HAProxyMessage proxy = (HAProxyMessage) msg;
+-            InetSocketAddress newAddress = new InetSocketAddress( proxy.sourceAddress(), proxy.sourcePort() );
+-
+-            ProxyServer.getInstance().getLogger().log( Level.FINE, "Set remote address via PROXY {0} -> {1}", new Object[]
++            if (msg instanceof HAProxyMessage)
+             {
+-                channel.getRemoteAddress(), newAddress
+-            } );
++                HAProxyMessage proxy = (HAProxyMessage) msg;
++                InetSocketAddress newAddress = new InetSocketAddress(proxy.sourceAddress(), proxy.sourcePort());
+ 
+-            channel.setRemoteAddress( newAddress );
+-            return;
+-        }
++                ProxyServer.getInstance().getLogger().log(Level.FINE, "Set remote address via PROXY {0} -> {1}", new Object[]
++                        {
++                                channel.getRemoteAddress(), newAddress
++                        });
+ 
+-        if ( handler != null )
+-        {
+-            PacketWrapper packet = (PacketWrapper) msg;
+-            boolean sendPacket = handler.shouldHandle( packet );
+-            try
+-            {
+-                if ( sendPacket && packet.packet != null )
+-                {
+-                    try
+-                    {
+-                        packet.packet.handle( handler );
+-                    } catch ( CancelSendSignal ex )
+-                    {
+-                        sendPacket = false;
++                channel.setRemoteAddress(newAddress);
++                return;
++            }
++
++            if (handler != null) {
++                PacketWrapper packet = (PacketWrapper) msg;
++                boolean sendPacket = handler.shouldHandle(packet);
++                try {
++                    if (sendPacket && packet.packet != null) {
++                        try {
++                            packet.packet.handle(handler);
++                        } catch (CancelSendSignal ex) {
++                            sendPacket = false;
++                        }
+                     }
++                    if (sendPacket) {
++                        handler.handle(packet);
++                    }
++                } finally {
++                    packet.trySingleRelease();
+                 }
+-                if ( sendPacket )
+-                {
+-                    handler.handle( packet );
+-                }
+-            } finally
+-            {
+-                packet.trySingleRelease();
+             }
+         }
+     }
+-- 
+2.20.1 (Apple Git-117)
+
